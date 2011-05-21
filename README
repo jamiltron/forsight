@@ -10,7 +10,8 @@ Since I run Gambit-C, I run it as follows:
 
 > gsi forsight.scm
 
-Your Scheme implementation may vary.
+Your Scheme implementation may vary. I also included the binary generated
+by Gambit-C, if you prefer to use that.
 
 The currently implementation only supports basic Forth stack-arithmetic, but I
 have a working function-definition method somewhat working. Once I iron out
