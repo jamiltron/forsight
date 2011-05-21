@@ -5,9 +5,10 @@
 
 ;;; Global variables
 (define *prompt* "forsight> ")
-(define *dictionary* '(("+" add-f) ("-" sub-f) ("*" mul-f) ("/" div-f) ("mod" mod-f)
-		       ("/mod" mod-div-f) ("and" and-f) ("or" or-f) ("=" eq-f)
-		       (">" gt-f) ("<" lt-f) ("swap" swap-f) ("dup" dup-f)
+(define *dictionary* '(("+" add-f) ("-" sub-f) ("*" mul-f) ("/" div-f) 
+		       ("mod" mod-f) ("/mod" mod-div-f) ("and" and-f) 
+		       ("or" or-f) ("=" eq-f) (">" gt-f) ("<" lt-f) 
+		       ("swap" swap-f) ("dup" dup-f)
 		       ("over" over-f) ("drop" drop-f) ("dump" dump-f)
 		       ("=0" eq-zero-f) (">0" gt-zero-f) ("<0" lt-zero-f)
 		       ("." dot-f) (".s" dots-f)))
@@ -17,27 +18,27 @@
 ; returns the keys of a hash ((k v) (k v) ... (k v))
 (define (hash-keys hash)
   (cond
-    ((null? hash) (quote ()))
-    (else (cons (car (car hash)) (hash-keys (cdr hash))))))
+   ((null? hash) (quote ()))
+   (else (cons (car (car hash)) (hash-keys (cdr hash))))))
 
 ; returns the values of a hash
 (define (hash-vals hash)
   (cond
-    ((null? hash) (quote ()))
-    (else (cons (car (cdr (car hash))) (hash-vals (cdr hash))))))
+   ((null? hash) (quote ()))
+   (else (cons (car (cdr (car hash))) (hash-vals (cdr hash))))))
 
 ; returns true if hash has the supplied key
 (define (has-key? key hash)
   (cond
-  ((member key (hash-keys hash)) #t)
-  (else #f)))
+   ((member key (hash-keys hash)) #t)
+   (else #f)))
 
 ; returns the value of the specified key in hash
- (define (get-val key hash)
+(define (get-val key hash)
   (cond
-    ((null? hash) (quote ()))
-    ((equal? key (car (car hash))) (car (cdr (car hash))))
-(else (get-val key (cdr hash)))))
+   ((null? hash) (quote ()))
+   ((equal? key (car (car hash))) (car (cdr (car hash))))
+   (else (get-val key (cdr hash)))))
 
 ; returns a list of characters sans the character sep
 (define (split-string sep str)
@@ -68,14 +69,14 @@
 ; performs a unary logic operation on the stack, pushing the result
 (define (logical-f op stack)
   (cond
-    ((op (car stack)) (cons 1 (cdr stack)))
-(else (cons 0 (cdr stack)))))
+   ((op (car stack)) (cons 1 (cdr stack)))
+   (else (cons 0 (cdr stack)))))
 
 ; performs a binary logic operation on the stack, pushing the result
 (define (bi-logical-f op stack)
   (cond
-    ((op (car stack) (second stack)) (cons 1 (pop2 stack)))
-(else (cons 0 (cdr stack)))))
+   ((op (car stack) (second stack)) (cons 1 (pop2 stack)))
+   (else (cons 0 (cdr stack)))))
 
 
 ;;; Forth functions, most of these are defined for clarity
