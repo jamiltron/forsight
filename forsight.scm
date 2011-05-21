@@ -132,13 +132,15 @@
   (eq-f (cons 0 stack)))
   
 (define (gt-zero-f stack)
-  (gt-f (cons 0 stack)))
+  (lt-f (cons 0 stack)))
   
 (define (lt-zero-f stack)
-  (lt-f (cons 0 stack)))
+  (gt-f (cons 0 stack)))
 
 (define (dot-f stack)
   (display (car stack))
+  (display " <ok>")
+  (newline)
   (cdr stack))
 
 (define (dots-f stack)
@@ -146,8 +148,11 @@
   (display (length stack))
   (display "> ")
   (display stack)
-  (newline))
+  (display " <ok>")
+  (newline)
+  stack)
 
+;;; the interpreter
 (define (eval-f in-s eval-s dict)
   (cond
    ((null? in-s) 
@@ -172,5 +177,6 @@
         (stack-b (eval-f (split-string " " a) stack dict)))
     (repl-f-iter prompt dict stack-b)))
 
+(display "FORSIGHT 0.1 (20 Mar 2011)\n")
 (repl-f *prompt* *dictionary* '())
 
