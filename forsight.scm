@@ -69,14 +69,20 @@
 ; performs a unary logic operation on the stack, pushing the result
 (define (logical-f op stack)
   (cond
-   ((op (car stack)) (cons 1 (cdr stack)))
+   ((op (car stack)) (cons -1 (cdr stack)))
    (else (cons 0 (cdr stack)))))
 
 ; performs a binary logic operation on the stack, pushing the result
 (define (bi-logical-f op stack)
   (cond
-   ((op (car stack) (second stack)) (cons 1 (pop2 stack)))
+   ((op (car stack) (second stack)) (cons -1 (pop2 stack)))
    (else (cons 0 (pop2 stack)))))
+
+(define (parse-var stack)
+  (cond
+   ((null? stack) '())
+   ((equal? (car stack) ";") '())
+   (else (cons (car stack) (parse-var (cdr stack))))))
 
 
 ;;; Forth functions, most of these are defined for clarity
@@ -100,12 +106,12 @@
 
 (define (and-f stack)
   (cond
-    ((and (car stack) (second stack)) (cons 1 (pop2 stack)))
+    ((and (car stack) (second stack)) (cons -1 (pop2 stack)))
 (else (cons 0 (cdr stack)))))
   
 (define (or-f stack)
   (cond
-    ((or (car stack) (second stack)) (cons 1 (pop2 stack)))
+    ((or (car stack) (second stack)) (cons -1 (pop2 stack)))
 (else (cons 0 (cdr stack)))))
   
 (define (eq-f stack)
@@ -161,31 +167,41 @@
 (define (scolon-f stack)
   stack)
 
+(define (colon-f stack)
+  (set! *dictionary*
+	(append *dictionary* (cons
+			      (list (car stack)
+				    (lambda (x)
+				    (eval-f (cdr stack) x))) '())))
+  '())
+
+
 ;;; the interpreter
-(define (eval-f in-s eval-s dict)
+(define (eval-f in-s eval-s)
   (cond
    ((null? in-s) 
     eval-s)
+   ((number? (car in-s))
+    (eval-f (cdr in-s) (cons (car in-s) eval-s)))
    ((string->number (car in-s)) 
-    (eval-f (cdr in-s) (cons (string->number (car in-s)) eval-s) dict))
-   ((has-key? (car in-s) dict) 
-    (let ((fun-f (eval (get-val (car in-s) dict))))
-	  (eval-f (cdr in-s) (fun-f eval-s) dict)))
+    (eval-f (cdr in-s) (cons (string->number (car in-s)) eval-s)))
+   ((equal? ":" (car in-s))
+    (colon-f (parse-var (cdr in-s))))
+   ((has-key? (car in-s) *dictionary*) 
+    (let ((fun-f (get-val (car in-s) *dictionary*)))
+      (cond
+       ((symbol? fun-f) (eval-f (cdr in-s) ((eval fun-f) eval-s)))
+       (else 
+	(eval-f (cdr in-s) ((get-val (car in-s) *dictionary*) eval-s))))))
    (else 
     (display "ERROR: UNEXPECTED CHARACTER"))))
 
-(define (repl-f prompt dict stack)
-  (display prompt)
+(define (repl-f stack)
+  (display *prompt*)
   (let* ((a (read-line))
-        (stack-b (eval-f (split-string " " a) stack dict)))
-    (repl-f prompt dict stack-b)))
-
-(define (repl-f-iter prompt dict stack)
-  (display prompt)
-  (let* ((a (read-line))
-        (stack-b (eval-f (split-string " " a) stack dict)))
-    (repl-f-iter prompt dict stack-b)))
+        (stack-b (eval-f (split-string " " a) stack)))
+    (repl-f stack-b)))
 
 (display "FORSIGHT 0.1 (20 Mar 2011)\n")
-(repl-f *prompt* *dictionary* '())
+(repl-f '())
 
