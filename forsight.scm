@@ -5,10 +5,12 @@
 
 ;;; Global variables
 (define *prompt* "forsight> ")
-(define *dictionary* '((+ add-f) (- sub-f) (* mul-f) (/ div-f) (mod mod-f)
-		       (/mod mod-div-f) (and and-f) (or or-f) (= eq-f)
-		       (> gt-f) (< lt-f) (swap swap-f) (dup dup-f)
-		       (over over-f) (drop drop-f) (dump dump-f)))
+(define *dictionary* '(("+" add-f) ("-" sub-f) ("*" mul-f) ("/" div-f) ("mod" mod-f)
+		       ("/mod" mod-div-f) ("and" and-f) ("or" or-f) ("=" eq-f)
+		       (">" gt-f) ("<" lt-f) ("swap" swap-f) ("dup" dup-f)
+		       ("over" over-f) ("drop" drop-f) ("dump" dump-f)
+		       ("=0" eq-zero-f) (">0" gt-zero-f) ("<0" lt-zero-f)
+		       ("." dot-f) (".s" dots-f)))
 
 
 ;;; Generic functions for ease-of-use
@@ -16,7 +18,7 @@
 (define (hash-keys hash)
   (cond
     ((null? hash) (quote ()))
-(else (cons (car (car hash)) (hash-keys (cdr hash))))))
+    (else (cons (car (car hash)) (hash-keys (cdr hash))))))
 
 ; returns the values of a hash
 (define (hash-vals hash)
@@ -36,7 +38,17 @@
     ((null? hash) (quote ()))
     ((equal? key (car (car hash))) (car (cdr (car hash))))
 (else (get-val key (cdr hash)))))
-  
+
+; returns a list of characters sans the character sep
+(define (split-string sep str)
+  (define (split-iter sep str i last stop)
+    (cond
+     ((eq? i stop) (cons (substring str last stop) '()))
+     ((equal? (substring str i (+ i 1)) sep) 
+      (cons (substring str last i) (split-iter sep str (+ i 1) (+ i 1) stop)))
+     (else (split-iter sep str (+ i 1) last stop))))
+  (split-iter sep str 0 0 (string-length str)))
+
 ; returns the second element on the stack
 (define (second stack)
   (car (cdr stack)))
@@ -113,8 +125,8 @@
 (define (over-f stack)
   (cons (second stack) stack))
   
- (define (drop-f stack)
-   (cdr stack))
+(define (drop-f stack)
+  (cdr stack))
    
 (define (eq-zero-f stack)
   (eq-f (cons 0 stack)))
@@ -122,15 +134,43 @@
 (define (gt-zero-f stack)
   (gt-f (cons 0 stack)))
   
- (define (lt-zero-f stack)
-   (lt-f (cons 0 stack)))
+(define (lt-zero-f stack)
+  (lt-f (cons 0 stack)))
 
+(define (dot-f stack)
+  (display (car stack))
+  (cdr stack))
+
+(define (dots-f stack)
+  (display "<")
+  (display (length stack))
+  (display "> ")
+  (display stack)
+  (newline))
 
 (define (eval-f in-s eval-s dict)
   (cond
-   ((null? in-s) (car eval-s))
-   ((number? (car in-s)) (eval-f (cdr in-s) (cons (car in-s) eval-s) dict))
+   ((null? in-s) 
+    eval-s)
+   ((string->number (car in-s)) 
+    (eval-f (cdr in-s) (cons (string->number (car in-s)) eval-s) dict))
    ((has-key? (car in-s) dict) 
     (let ((fun-f (eval (get-val (car in-s) dict))))
 	  (eval-f (cdr in-s) (fun-f eval-s) dict)))
-   (else (display "ERROR: UNEXPECTED CHARACTER"))))
+   (else 
+    (display "ERROR: UNEXPECTED CHARACTER"))))
+
+(define (repl-f prompt dict stack)
+  (display prompt)
+  (let* ((a (read-line))
+        (stack-b (eval-f (split-string " " a) stack dict)))
+    (repl-f prompt dict stack-b)))
+
+(define (repl-f-iter prompt dict stack)
+  (display prompt)
+  (let* ((a (read-line))
+        (stack-b (eval-f (split-string " " a) stack dict)))
+    (repl-f-iter prompt dict stack-b)))
+
+(repl-f *prompt* *dictionary* '())
+
