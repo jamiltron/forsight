@@ -11,7 +11,7 @@
 		       ("swap" swap-f) ("dup" dup-f)
 		       ("over" over-f) ("drop" drop-f) ("dump" dump-f)
 		       ("=0" eq-zero-f) (">0" gt-zero-f) ("<0" lt-zero-f)
-		       ("." dot-f) (".s" dots-f)))
+		       ("." dot-f) (".s" dots-f) (";" scolon-f) (":" colon-f)))
 
 
 ;;; Generic functions for ease-of-use
@@ -76,7 +76,7 @@
 (define (bi-logical-f op stack)
   (cond
    ((op (car stack) (second stack)) (cons 1 (pop2 stack)))
-   (else (cons 0 (cdr stack)))))
+   (else (cons 0 (pop2 stack)))))
 
 
 ;;; Forth functions, most of these are defined for clarity
@@ -139,10 +139,15 @@
   (gt-f (cons 0 stack)))
 
 (define (dot-f stack)
-  (display (car stack))
-  (display " <ok>")
-  (newline)
-  (cdr stack))
+  (cond
+   ((eq? 0 (length stack)) 
+    (display "error: stack underflow\n")
+    stack)
+   (else
+    (display (car stack))
+    (display " <ok>")
+    (newline)
+    (cdr stack))))
 
 (define (dots-f stack)
   (display "<")
@@ -151,6 +156,9 @@
   (display stack)
   (display " <ok>")
   (newline)
+  stack)
+
+(define (scolon-f stack)
   stack)
 
 ;;; the interpreter
