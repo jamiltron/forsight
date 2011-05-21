@@ -106,13 +106,13 @@
 
 (define (and-f stack)
   (cond
-    ((and (car stack) (second stack)) (cons -1 (pop2 stack)))
-(else (cons 0 (cdr stack)))))
+   ((and (car stack) (second stack)) (cons -1 (pop2 stack)))
+   (else (cons 0 (cdr stack)))))
   
 (define (or-f stack)
   (cond
-    ((or (car stack) (second stack)) (cons -1 (pop2 stack)))
-(else (cons 0 (cdr stack)))))
+   ((or (car stack) (second stack)) (cons -1 (pop2 stack)))
+   (else (cons 0 (cdr stack)))))
   
 (define (eq-f stack)
   (bi-logical-f equal? stack))
@@ -202,6 +202,6 @@
         (stack-b (eval-f (split-string " " a) stack)))
     (repl-f stack-b)))
 
-(display "FORSIGHT 0.1 (20 Mar 2011)\n")
+(display "FORSIGHT 0.1 (21 May 2011)\n")
 (repl-f '())
 
