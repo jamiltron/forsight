@@ -23,7 +23,7 @@ Forth I am most closely emulating is the language described in Leo Brodie's
 If any advanced Schemers, Lispers, Forthers, Interpreter-writers, Code Ninjas,
 etc. read this program and have any suggestions I'd love to hear them! Send me
 a message through here. Also contact me if you use this, I'd love to hear form
-you. Also, feel free to fork and improve, hack, whatever.
+you. Feel free to fork and improve, hack, whatever.
 
 The License is describe in the LICENSE file, but the short version is that this
 is under the BSD 2-clause, so use it however you want - I'd just like a 
