@@ -11,7 +11,8 @@
 		       ("swap" swap-f) ("dup" dup-f)
 		       ("over" over-f) ("drop" drop-f) ("dump" dump-f)
 		       ("=0" eq-zero-f) (">0" gt-zero-f) ("<0" lt-zero-f)
-		       ("." dot-f) (".s" dots-f) (";" scolon-f) (":" colon-f)))
+		       ("." dot-f) (".s" dots-f) (";" scolon-f) (":" colon-f)
+		       ("exit" exit-f) ("" scolon-f)))
 
 
 ;;; Generic functions for ease-of-use
@@ -50,6 +51,26 @@
      (else (split-iter sep str (+ i 1) last stop))))
   (split-iter sep str 0 0 (string-length str)))
 
+(define (strip-string str)
+  (split-string " " str))
+
+; returns the last element of a list
+(define (last lat)
+  (cond
+   ((null? lat) '())
+   ((null? (cdr lat)) (car lat))
+   (else (last (cdr lat)))))
+
+; reads input until a semi-colon in entered
+;;; FIX
+(define (read-until-scolon input)
+  (cond
+   ((null? input) '())
+   ((equal? (last input) ";") input)
+   (else (let ((a (read-line)))
+	   (read-until-scolon (append input (strip-string  a)))))))
+
+
 ; returns the second element on the stack
 (define (second stack)
   (car (cdr stack)))
@@ -77,12 +98,6 @@
   (cond
    ((op (car stack) (second stack)) (cons -1 (pop2 stack)))
    (else (cons 0 (pop2 stack)))))
-
-(define (parse-var stack)
-  (cond
-   ((null? stack) '())
-   ((equal? (car stack) ";") '())
-   (else (cons (car stack) (parse-var (cdr stack))))))
 
 
 ;;; Forth functions, most of these are defined for clarity
@@ -117,11 +132,12 @@
 (define (eq-f stack)
   (bi-logical-f equal? stack))
   
+; gt-f & lt-f are backwards due to the order of popping
 (define (gt-f stack)
-  (bi-logical-f > stack))
+  (bi-logical-f < stack))
 
 (define (lt-f stack)
-  (bi-logical-f < stack))
+  (bi-logical-f > stack))
   
 (define (swap-f stack)
   (cons (second stack) (cons (car stack) (pop2 stack))))
@@ -139,10 +155,10 @@
   (eq-f (cons 0 stack)))
   
 (define (gt-zero-f stack)
-  (lt-f (cons 0 stack)))
+  (gt-f (cons 0 stack)))
   
 (define (lt-zero-f stack)
-  (gt-f (cons 0 stack)))
+  (lt-f (cons 0 stack)))
 
 (define (dot-f stack)
   (cond
@@ -159,7 +175,7 @@
   (display "<")
   (display (length stack))
   (display "> ")
-  (display stack)
+  (display (reverse stack))
   (display " <ok>")
   (newline)
   stack)
@@ -167,13 +183,20 @@
 (define (scolon-f stack)
   stack)
 
-(define (colon-f stack)
+; currently colon-f is the only function that requires its own
+; seperate input from the other functions, I'd like to redo this
+; in a more elegant fashion, any suggestions are welcome! I am also
+; not super happy about how not-functional it is. Again, suggestions help.
+(define (colon-f input stack)
   (set! *dictionary*
 	(append *dictionary* (cons
-			      (list (car stack)
+			      (list (car input)
 				    (lambda (x)
-				    (eval-f (cdr stack) x))) '())))
-  '())
+				    (eval-f (cdr input) x))) '())))
+  stack)
+
+(define (exit-f stack)
+  (exit))
 
 
 ;;; the interpreter
@@ -186,7 +209,7 @@
    ((string->number (car in-s)) 
     (eval-f (cdr in-s) (cons (string->number (car in-s)) eval-s)))
    ((equal? ":" (car in-s))
-    (colon-f (parse-var (cdr in-s))))
+    (colon-f (read-until-scolon (cdr in-s)) eval-s))
    ((has-key? (car in-s) *dictionary*) 
     (let ((fun-f (get-val (car in-s) *dictionary*)))
       (cond
@@ -202,6 +225,6 @@
         (stack-b (eval-f (split-string " " a) stack)))
     (repl-f stack-b)))
 
-(display "FORSIGHT 0.1 (21 May 2011)\n")
+(display "FORSIGHT 0.1 (22 May 2011)\n")
 (repl-f '())
 
