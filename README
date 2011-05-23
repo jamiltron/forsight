@@ -5,28 +5,41 @@ Forsight is a basic Forth interpreter written in Scheme. This is mostly just a
 thought-experiment, but if anyone can use it in any fashion I would love to
 know!
 
-Forsight is meant to be run on the command line via your Scheme interpreter.
-Since I run Gambit-C, I run it as follows:
-
-$ gsi forsight.scm
-
+Forsight is meant to be run on the command line via your Scheme interpreter. 
 Your Scheme implementation may vary.
 
-The currently implementation only supports basic Forth stack-arithmetic, but I
-have a working function-definition method somewhat working. Once I iron out
-those details I will add them.
+The currently implementation only supports basic Forth stack-arithmetic, and 
+basic word definition.  
 
-The Scheme implementation this was written in is Gambit-C. The "version" of
-Forth I am most closely emulating is the language described in Leo Brodie's
-"Starting FORTH" (http://www.forth.com/starting-forth).
+The Scheme implementation this was written in is Gambit-C. The "version" of 
+Forth I am most closely emulating is the language described in Leo Brodie's 
+"Starting FORTH" (http://www.forth.com/starting-forth). Since I have a 
+(very basic) version of Forth working I intend to use it to go through Brodie's
+books. When I encounter new things or obvious errors in my implementation 
+I will fix them as they go long.
 
 If any advanced Schemers, Lispers, Forthers, Interpreter-writers, Code Ninjas,
 etc. read this program and have any suggestions I'd love to hear them! Send me
 a message through here. Also contact me if you use this, I'd love to hear form
 you. Feel free to fork and improve, hack, whatever.
 
+
+LICENSE
+-------
+
 The License is describe in the LICENSE file, but the short version is that this
 is under the BSD 2-clause, so use it however you want - I'd just like a 
 nod somewhere if you decide to redistribute it.
 
-Thank you!
+
+SCHEME FUNCTIONS
+----------------
+
+I chose to use this to learn both Forth and Scheme a little bit better. While
+I am learning Clojure and I tend to use Racket a lot for personal hackage, I 
+decided it would be fun to implement this program use on the barest essentials,
+which is why there are none of the srfi stuff that would have made string
+processing and hash stuff all the more elegant.
+
+
+THANK YOU!
