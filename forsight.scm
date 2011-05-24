@@ -51,9 +51,6 @@
      (else (split-iter sep str (+ i 1) last stop))))
   (split-iter sep str 0 0 (string-length str)))
 
-(define (strip-string str)
-  (split-string " " str))
-
 ; returns the last element of a list
 (define (last lat)
   (cond
@@ -68,7 +65,7 @@
    ((null? input) '())
    ((equal? (last input) ";") input)
    (else (let ((a (read-line)))
-	   (read-until-scolon (append input (strip-string  a)))))))
+	   (read-until-scolon (append input (split-string  " " a)))))))
 
 
 ; returns the second element on the stack
@@ -79,23 +76,25 @@
 (define (pop2 stack)
   (cdr (cdr stack)))
 
+;;; I could have abstracted the following functions further, so with
+;;; a binary-maker function, unary-maker returning a lambda function,
+;;; but since some function will not be able to do this, I left them
+;;; as seperately define functs
 ; performs a binary operation on the stack, pushing the result onto it
 (define (binary-f op stack)
-  (cons (op (second stack) (car stack)) (pop2 stack)))
-  
-; performs a unary operation on the stack, pushing the result onto it
-(define (unary-f op stack)
-  (cons (op (car stack)) (cdr stack)))
-
-; performs a unary logic operation on the stack, pushing the result
-(define (logical-f op stack)
   (cond
-   ((op (car stack)) (cons -1 (cdr stack)))
-   (else (cons 0 (cdr stack)))))
-
+   ((< (length stack) 2)
+    (display "error: stack underflow")
+    stack)
+   (else
+    (cons (op (second stack) (car stack)) (pop2 stack)))))
+  
 ; performs a binary logic operation on the stack, pushing the result
 (define (bi-logical-f op stack)
   (cond
+   ((< (length stack) 2)
+    (display "error: stack underflow")
+    stack)
    ((op (car stack) (second stack)) (cons -1 (pop2 stack)))
    (else (cons 0 (pop2 stack)))))
 
@@ -121,13 +120,23 @@
 
 (define (and-f stack)
   (cond
-   ((and (car stack) (second stack)) (cons -1 (pop2 stack)))
-   (else (cons 0 (cdr stack)))))
+   ((< (length stack) 2)
+    (display "error: stack underflow")
+    stack)
+   ((and (not (= (car stack) 0)) (not (= (second stack) 0))) 
+    (cons -1 (pop2 stack)))
+   (else 
+    (cons 0 (pop2 stack)))))
   
 (define (or-f stack)
   (cond
-   ((or (car stack) (second stack)) (cons -1 (pop2 stack)))
-   (else (cons 0 (cdr stack)))))
+   ((or (not (= (car stack) 0)) (not (= (second stack) 0))) 
+    (cons -1 (pop2 stack)))
+   ((< (length stack) 2)
+    (display "error: stack underflow")
+    stack)
+   (else 
+    (cons 0 (cdr stack)))))
   
 (define (eq-f stack)
   (bi-logical-f equal? stack))
