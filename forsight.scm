@@ -11,8 +11,8 @@
 		       ("swap" swap-f) ("dup" dup-f)
 		       ("over" over-f) ("drop" drop-f) ("dump" dump-f)
 		       ("=0" eq-zero-f) (">0" gt-zero-f) ("<0" lt-zero-f)
-		       ("." dot-f) (".s" dots-f) (";" scolon-f) (":" colon-f)
-		       ("exit" exit-f) ("" scolon-f)))
+		       ("." dot-f) (".s" dots-f) (";" pass-f) (":" colon-f)
+		       ("exit" exit-f) ("" pass-f) ("spaces" spaces-f)))
 
 
 ;;; Generic functions for ease-of-use
@@ -189,8 +189,16 @@
   (newline)
   stack)
 
-(define (scolon-f stack)
+(define (pass-f stack)
   stack)
+
+(define (spaces-f stack)
+  (cond
+   ((= (car stack) 0)
+    (cdr stack))
+   (else
+    (display " ")
+    (spaces-f (cons (- (car stack) 1) (cdr stack))))))
 
 ; currently colon-f is the only function that requires its own
 ; seperate input from the other functions, I'd like to redo this
@@ -226,7 +234,7 @@
        (else 
 	(eval-f (cdr in-s) ((get-val (car in-s) *dictionary*) eval-s))))))
    (else 
-    (display "ERROR: UNEXPECTED CHARACTER"))))
+    (display "error: unexpected character"))))
 
 (define (repl-f stack)
   (display *prompt*)
