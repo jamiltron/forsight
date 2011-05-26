@@ -1,6 +1,6 @@
 ;;; forsight.scm
 ;;; by Justin Hamilton
-;;; last updated May 20th 2011 (currently not done)
+;;; last updated May 25th 2011 (currently not done)
 ;;; released under BSD 2-clause license
 
 ;;; Global variables
@@ -58,15 +58,21 @@
    ((null? (cdr lat)) (car lat))
    (else (last (cdr lat)))))
 
-; reads input until a semi-colon in entered
-;;; FIX
-(define (read-until-scolon input)
-  (cond
-   ((null? input) '())
-   ((equal? (last input) ";") input)
-   (else (let ((a (read-line)))
-	   (read-until-scolon (append input (split-string  " " a)))))))
+; continue to read input until character is input
+(define (read-until-maker char)
+  (lambda (input)
+    (letrec ((read-until-iter
+	      (lambda (input)
+		(cond
+		 ((null? input) '())
+		 ((equal? (last input) char) input)
+		 (else
+		  (let ((a (read-line)))
+		    (read-until-iter (append input (split-string " " a)))))))))
+      (read-until-iter input))))
 
+; reads input until a semi-colon in entered
+(define read-until-scolon (read-until-maker ";"))
 
 ; returns the second element on the stack
 (define (second stack)
