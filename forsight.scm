@@ -76,74 +76,69 @@
 (define (pop2 stack)
   (cdr (cdr stack)))
 
-;;; I could have abstracted the following functions further, so with
-;;; a binary-maker function, unary-maker returning a lambda function,
-;;; but since some function will not be able to do this, I left them
-;;; as seperately define functs
 ; performs a binary operation on the stack, pushing the result onto it
-(define (binary-f op stack)
-  (cond
-   ((< (length stack) 2)
-    (display "error: stack underflow")
-    stack)
-   (else
-    (cons (op (second stack) (car stack)) (pop2 stack)))))
+(define (binary-maker op)
+  (lambda (stack)
+    (cond
+     ((< (length stack) 2)
+      (display "error: stack underflow\n")
+      stack)
+     (else
+      (cons (op (second stack) (car stack)) (pop2 stack))))))
+  
   
 ; performs a binary logic operation on the stack, pushing the result
-(define (bi-logical-f op stack)
-  (cond
-   ((< (length stack) 2)
-    (display "error: stack underflow")
-    stack)
-   ((op (car stack) (second stack)) (cons -1 (pop2 stack)))
-   (else (cons 0 (pop2 stack)))))
+(define (bi-logical-maker op)
+  (lambda (stack)
+    (cond
+     ((< (length stack) 2)
+      (display "error: stack underflow\n")
+      stack)
+     ((op (car stack) (second stack))
+      (cons -1 (pop2 stack)))
+     (else
+      (cons 0 (pop2 stack))))))
 
+(define (and-or-maker op)
+  (lambda (stack)
+    (cond
+     ((< (length stack) 2)
+      (display "error: stack underflow\n")
+      stack)
+     (else
+      (let* ((a (eq? 0 (car stack)))
+	     (b (eq? 0 (second stack)))
+	     (result (eval (cons op (cons a (cons b '()))))))
+	(cond
+	 (result
+	  (cons -1 (pop2 stack)))
+	 (else
+	  (cons 0 (pop2 stack)))))))))
 
 ;;; Forth functions, most of these are defined for clarity
-(define (add-f stack)
-  (binary-f + stack))
+(define add-f (binary-maker +))
   
-(define (sub-f stack)
-  (binary-f - stack))
+(define sub-f (binary-maker -))
   
-(define (mul-f stack)
-  (binary-f * stack))
+(define mul-f (binary-maker *))
   
-(define (div-f stack)
-  (binary-f / stack))
+(define div-f (binary-maker quotient))
+
+(define mod-f (binary-maker remainder))
 
 (define (mod-div-f stack)
   (cons (car (mod-f stack)) (cons (car div-f stack)) (pop2 stack)))
 
-(define (mod-f stack)
-  (binary-f remainder stack))
-
-(define (and-f stack)
-  (cond
-   ((< (length stack) 2)
-    (display "error: stack underflow")
-    stack)
-   ((and (not (= (car stack) 0)) (not (= (second stack) 0))) 
-    (cons -1 (pop2 stack)))
-   (else 
-    (cons 0 (pop2 stack)))))
+(define and-f (and-or-maker 'and))
   
-(define (or-f stack)
-  (cond
-   ((or (not (= (car stack) 0)) (not (= (second stack) 0))) 
-    (cons -1 (pop2 stack)))
-   ((< (length stack) 2)
-    (display "error: stack underflow")
-    stack)
-   (else 
-    (cons 0 (cdr stack)))))
+(define or-f (and-or-maker 'or))
   
-(define (eq-f stack)
-  (bi-logical-f equal? stack))
+(define eq-f (bi-logical-maker =))
   
 ; gt-f & lt-f are backwards due to the order of popping
-(define (gt-f stack)
-  (bi-logical-f < stack))
+(define gt-f (bi-logical-maker <))
+
+(define lt-f (bi-logical-maker >))
 
 (define (lt-f stack)
   (bi-logical-f > stack))
