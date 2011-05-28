@@ -1,6 +1,6 @@
 ;;; forsight.scm
 ;;; by Justin Hamilton
-;;; last updated May 25th 2011 (currently not done)
+;;; last updated May 27th 2011 (currently not done)
 ;;; released under BSD 2-clause license
 
 ;;; Global variables
