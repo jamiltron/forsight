@@ -204,8 +204,6 @@
     (error-f stack))
    (else
     (display (car stack))
-    (display " <ok>")
-    (newline)
     (cdr stack))))
 
 (define (dots-f stack)
@@ -213,8 +211,6 @@
   (display (length stack))
   (display "> ")
   (display (reverse stack))
-  (display " <ok>")
-  (newline)
   stack)
 
 (define (pass-f stack)
@@ -245,7 +241,11 @@
    ((null? input)
     (string-f (read-line) stack))
    ((equal? (car input) "\"")
-    stack)
+    (cond
+     ((null? (cdr input))
+      stack)
+     (else
+      (eval-f (cdr input) stack))))
    (else
     (display (car input))
     (display " ")
@@ -255,7 +255,6 @@
 (define (eval-f in-s eval-s)
   (cond
    ((null? in-s)
-    (display " <ok>\n")
     eval-s)
    ((number? (car in-s))
     (eval-f (cdr in-s) (cons (car in-s) eval-s)))
