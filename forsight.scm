@@ -12,7 +12,8 @@
 		       ("over" over-f) ("drop" drop-f) ("dump" dump-f)
 		       ("=0" eq-zero-f) (">0" gt-zero-f) ("<0" lt-zero-f)
 		       ("." dot-f) (".s" dots-f) (";" pass-f) (":" colon-f)
-		       ("exit" exit-f) ("" pass-f) ("spaces" spaces-f)))
+		       ("exit" exit-f) ("" pass-f) ("spaces" spaces-f)
+		       (".\"" string-f)))
 
 
 ;;; Generic functions for ease-of-use
@@ -42,21 +43,32 @@
    (else (get-val key (cdr hash)))))
 
 ; returns a list of characters sans the character sep
-(define (split-string sep str)
-  (define (split-iter sep str i last stop)
-    (cond
-     ((eq? i stop) (cons (substring str last stop) '()))
-     ((equal? (substring str i (+ i 1)) sep) 
-      (cons (substring str last i) (split-iter sep str (+ i 1) (+ i 1) stop)))
-     (else (split-iter sep str (+ i 1) last stop))))
-  (split-iter sep str 0 0 (string-length str)))
+(define (string-split sep)
+  (lambda (str)
+    (letrec ((split-iter
+	      (lambda (str i last stop)
+		(cond
+		 ((eq? i stop)
+		  (cons (substring str last stop) '()))
+		 ((equal? (substring str i (+ i 1)) sep)
+		  (cons (substring str last i) 
+			(split-iter str (+ i 1) (+ i 1) stop)))
+		 (else
+		  (split-iter str (+ i 1) last stop))))))
+      (split-iter str 0 0 (string-length str)))))
+
+; splits a string into a list deliminated by spaces
+(define space-split (string-split " "))
 
 ; returns the last element of a list
 (define (last lat)
   (cond
-   ((null? lat) '())
-   ((null? (cdr lat)) (car lat))
-   (else (last (cdr lat)))))
+   ((null? lat)
+    '())
+   ((null? (cdr lat))
+    (car lat))
+   (else
+    (last (cdr lat)))))
 
 ; continue to read input until character is input
 (define (read-until-maker char)
@@ -64,15 +76,20 @@
     (letrec ((read-until-iter
 	      (lambda (input)
 		(cond
-		 ((null? input) '())
-		 ((equal? (last input) char) input)
+		 ((null? input)
+		  '())
+		 ((equal? (last input) char)
+		  input)
 		 (else
 		  (let ((a (read-line)))
-		    (read-until-iter (append input (split-string " " a)))))))))
+		    (read-until-iter (append input (space-split a)))))))))
       (read-until-iter input))))
 
 ; reads input until a semi-colon in entered
 (define read-until-scolon (read-until-maker ";"))
+
+; reads input until a double-quote
+(define read-until-dquote (read-until-maker "\""))
 
 ; returns the second element on the stack
 (define (second stack)
@@ -91,8 +108,7 @@
       stack)
      (else
       (cons (op (second stack) (car stack)) (pop2 stack))))))
-  
-  
+    
 ; performs a binary logic operation on the stack, pushing the result
 (define (bi-logical-maker op)
   (lambda (stack)
@@ -146,14 +162,15 @@
 
 (define lt-f (bi-logical-maker >))
 
-(define (lt-f stack)
-  (bi-logical-f > stack))
-  
 (define (swap-f stack)
   (cons (second stack) (cons (car stack) (pop2 stack))))
   
 (define (dup-f stack)
-  (cons (car stack) stack))
+  (cond
+   ((< (length stack) 1)
+    (error-f stack))
+   (else
+    (cons (car stack) stack))))
   
 (define (over-f stack)
   (cons (second stack) stack))
@@ -170,11 +187,14 @@
 (define (lt-zero-f stack)
   (lt-f (cons 0 stack)))
 
+(define (error-f stack)
+  (display "error: stack underflow\n")
+  stack)
+
 (define (dot-f stack)
   (cond
    ((eq? 0 (length stack)) 
-    (display "error: stack underflow\n")
-    stack)
+    (error-f stack))
    (else
     (display (car stack))
     (display " <ok>")
@@ -210,17 +230,29 @@
 	(append *dictionary* (cons
 			      (list (car input)
 				    (lambda (x)
-				    (eval-f (cdr input) x))) '())))
+				    (eval-f (cdr input) x)))
+			      '())))
   stack)
 
 (define (exit-f stack)
   (exit))
 
+(define (string-f input stack)
+  (cond
+   ((null? input)
+    (string-f (read-line) stack))
+   ((equal? (car input) "\"")
+    stack)
+   (else
+    (display (car input))
+    (display " ")
+    (string-f (cdr input) stack))))
 
 ;;; the interpreter
 (define (eval-f in-s eval-s)
   (cond
-   ((null? in-s) 
+   ((null? in-s)
+    (display " <ok>\n")
     eval-s)
    ((number? (car in-s))
     (eval-f (cdr in-s) (cons (car in-s) eval-s)))
@@ -228,6 +260,8 @@
     (eval-f (cdr in-s) (cons (string->number (car in-s)) eval-s)))
    ((equal? ":" (car in-s))
     (colon-f (read-until-scolon (cdr in-s)) eval-s))
+   ((equal? ".\"" (car in-s))
+    (string-f (cdr in-s) eval-s))
    ((has-key? (car in-s) *dictionary*) 
     (let ((fun-f (get-val (car in-s) *dictionary*)))
       (cond
@@ -235,14 +269,14 @@
        (else 
 	(eval-f (cdr in-s) ((get-val (car in-s) *dictionary*) eval-s))))))
    (else 
-    (display "error: unexpected character"))))
+    (display "error: unexpected character\n"))))
 
 (define (repl-f stack)
   (display *prompt*)
   (let* ((a (read-line))
-        (stack-b (eval-f (split-string " " a) stack)))
+        (stack-b (eval-f (space-split a) stack)))
     (repl-f stack-b)))
 
-(display "FORSIGHT 0.1 (22 May 2011)\n")
+(display "FORSIGHT 0.1 (27 May 2011)\n")
 (repl-f '())
 
