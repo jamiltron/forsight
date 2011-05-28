@@ -83,17 +83,13 @@
 ; continue to read input until character is input
 (define (read-until-maker char)
   (lambda (input)
-    (letrec ((read-until-iter
-	      (lambda (input)
-		(cond
-		 ((null? input)
-		  '())
-		 ((equal? (last input) char)
-		  input)
-		 (else
-		  (let ((a (read-line)))
-		    (read-until-iter (append input (space-split a)))))))))
-      (read-until-iter input))))
+    (cond
+     ((null? input)
+      '())
+     ((equal? (last input) char)
+      input)
+     (else
+      ((read-until-maker char) (append input (space-split (read-line))))))))
 
 ; reads input until a semi-colon in entered
 (define read-until-scolon (read-until-maker ";"))
