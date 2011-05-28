@@ -20,27 +20,36 @@
 ; returns the keys of a hash ((k v) (k v) ... (k v))
 (define (hash-keys hash)
   (cond
-   ((null? hash) (quote ()))
-   (else (cons (car (car hash)) (hash-keys (cdr hash))))))
+   ((null? hash)
+    (quote ()))
+   (else
+    (cons (car (car hash)) (hash-keys (cdr hash))))))
 
 ; returns the values of a hash
 (define (hash-vals hash)
   (cond
-   ((null? hash) (quote ()))
-   (else (cons (car (cdr (car hash))) (hash-vals (cdr hash))))))
+   ((null? hash)
+    (quote ()))
+   (else
+    (cons (car (cdr (car hash))) (hash-vals (cdr hash))))))
 
 ; returns true if hash has the supplied key
 (define (has-key? key hash)
   (cond
-   ((member key (hash-keys hash)) #t)
-   (else #f)))
+   ((member key (hash-keys hash))
+    #t)
+   (else
+    #f)))
 
 ; returns the value of the specified key in hash
 (define (get-val key hash)
   (cond
-   ((null? hash) (quote ()))
-   ((equal? key (car (car hash))) (car (cdr (car hash))))
-   (else (get-val key (cdr hash)))))
+   ((null? hash)
+    '())
+   ((equal? key (car (car hash)))
+    (car (cdr (car hash))))
+   (else
+    (get-val key (cdr hash)))))
 
 ; returns a list of characters sans the character sep
 (define (string-split sep)
@@ -88,9 +97,6 @@
 ; reads input until a semi-colon in entered
 (define read-until-scolon (read-until-maker ";"))
 
-; reads input until a double-quote
-(define read-until-dquote (read-until-maker "\""))
-
 ; returns the second element on the stack
 (define (second stack)
   (car (cdr stack)))
@@ -121,6 +127,7 @@
      (else
       (cons 0 (pop2 stack))))))
 
+; performs and/or on the stack, pushing -1 if true, 0 otherwise
 (define (and-or-maker op)
   (lambda (stack)
     (cond
@@ -221,10 +228,6 @@
     (display " ")
     (spaces-f (cons (- (car stack) 1) (cdr stack))))))
 
-; currently colon-f is the only function that requires its own
-; seperate input from the other functions, I'd like to redo this
-; in a more elegant fashion, any suggestions are welcome! I am also
-; not super happy about how not-functional it is. Again, suggestions help.
 (define (colon-f input stack)
   (set! *dictionary*
 	(append *dictionary* (cons
@@ -265,18 +268,21 @@
    ((has-key? (car in-s) *dictionary*) 
     (let ((fun-f (get-val (car in-s) *dictionary*)))
       (cond
-       ((symbol? fun-f) (eval-f (cdr in-s) ((eval fun-f) eval-s)))
+       ((symbol? fun-f)
+	(eval-f (cdr in-s) ((eval fun-f) eval-s)))
        (else 
 	(eval-f (cdr in-s) ((get-val (car in-s) *dictionary*) eval-s))))))
    (else 
     (display "error: unexpected character\n"))))
 
+; the repl
 (define (repl-f stack)
   (display *prompt*)
   (let* ((a (read-line))
         (stack-b (eval-f (space-split a) stack)))
     (repl-f stack-b)))
 
+; main
 (display "FORSIGHT 0.1 (27 May 2011)\n")
 (repl-f '())
 
