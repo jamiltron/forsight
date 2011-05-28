@@ -13,7 +13,8 @@
 		       ("=0" eq-zero-f) (">0" gt-zero-f) ("<0" lt-zero-f)
 		       ("." dot-f) (".s" dots-f) (";" pass-f) (":" colon-f)
 		       ("exit" exit-f) ("" pass-f) ("spaces" spaces-f)
-		       (".\"" string-f)))
+		       (".\"" string-f) ("false" false-f) ("true" true-f)
+		       ("invert" invert-f)))
 
 
 ;;; Generic functions for ease-of-use
@@ -251,10 +252,24 @@
     (display " ")
     (string-f (cdr input) stack))))
 
+(define (true-f stack)
+  (cons -1 stack))
+
+(define (false-f stack)
+  (cons 0 stack))
+
+(define (invert-f stack)
+  (cond
+   ((eq? (car stack) 0)
+    (cons -1 (cdr stack)))
+   (else
+    (cons 0 (cdr stack)))))
+
 ;;; the interpreter
 (define (eval-f in-s eval-s)
   (cond
    ((null? in-s)
+    (display " <ok>\n")
     eval-s)
    ((number? (car in-s))
     (eval-f (cdr in-s) (cons (car in-s) eval-s)))
