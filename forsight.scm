@@ -1,6 +1,6 @@
 ;;; forsight.scm
 ;;; by Justin Hamilton
-;;; last updated May 27th 2011 (currently not done)
+;;; last updated May 30th 2011
 ;;; released under BSD 2-clause license
 
 ;;; Global variables
@@ -14,7 +14,7 @@
 		       ("." dot-f) (".s" dots-f) (";" pass-f) (":" colon-f)
 		       ("exit" exit-f) ("" pass-f) ("spaces" spaces-f)
 		       (".\"" string-f) ("false" false-f) ("true" true-f)
-		       ("invert" invert-f)))
+		       ("invert" invert-f) ("rot" rot-f)))
 
 
 ;;; Generic functions for ease-of-use
@@ -98,9 +98,17 @@
 (define (second stack)
   (car (cdr stack)))
 
+; returns the third element on the stack
+(define (third stack)
+  (car (cdr (cdr stack))))
+
 ; returns the stack sans the first two elements
 (define (pop2 stack)
   (cdr (cdr stack)))
+
+; returns the stack sand the first three elements
+(define (pop3 stack)
+  (cdr (cdr (cdr stack))))
 
 ; performs a binary operation on the stack, pushing the result onto it
 (define (binary-maker op)
@@ -260,6 +268,15 @@
     (cons -1 (cdr stack)))
    (else
     (cons 0 (cdr stack)))))
+
+(define (rot-f stack)
+  (cond
+   ((< (length stack) 3)
+    (error-f stack))
+   (else
+    (cons (second stack)
+	  (cons (third stack)
+		(cons (car stack) (pop3 stack)))))))
 
 ;;; the interpreter
 (define (eval-f in-s eval-s)
