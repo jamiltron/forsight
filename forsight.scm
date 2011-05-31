@@ -282,7 +282,6 @@
 (define (eval-f in-s eval-s)
   (cond
    ((null? in-s)
-    (display " <ok>\n")
     eval-s)
    ((number? (car in-s))
     (eval-f (cdr in-s) (cons (car in-s) eval-s)))
