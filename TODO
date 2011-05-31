@@ -2,12 +2,12 @@
   global vars, pass those vars around, and use copies of *dictionary* instead
   of (set! *dictionary* ... )
 
-+ Implement missing functions (ROT, IF, THEN, etc.)
++ Implement compilation mode (so IFs work)
+
++ Implement missing functions (ROT, etc.)
 
 + Make a string function so upper/lower doesn't matter.
 
 + Implement the whole Block thing (Starting Forth Chap 3)
-
-+ Make overwriting words better (remove the old instance of a word)
 
 + Implement the return stack (I'm embarrassed this is not done yet)
