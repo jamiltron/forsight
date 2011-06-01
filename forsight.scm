@@ -231,11 +231,8 @@
 
 (define (colon-f input stack)
   (set! *dictionary*
-	(append *dictionary* (cons
-			      (list (car input)
-				    (lambda (x)
-				    (eval-f (cdr input) x)))
-			      '())))
+	(append (cons (list (car input) (lambda (x) (eval-f (cdr input) x))) '())
+		*dictionary*))
   stack)
 
 (define (exit-f stack)
@@ -309,6 +306,6 @@
     (repl-f stack-b)))
 
 ; main
-(display "FORSIGHT 0.1 (27 May 2011)\n")
+(display "FORSIGHT 0.1 (31 May 2011)\n")
 (repl-f '())
 
