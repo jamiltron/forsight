@@ -6,22 +6,24 @@ thought-experiment, but if anyone can use it in any fashion I would love to
 know!
 
 Forsight is meant to be run on the command line via your Scheme interpreter. 
-Your Scheme implementation may vary.
+Your Scheme implementation may vary. The currently implementation only supports
+basic Forth stack-arithmetic, and word definition.  
 
-The currently implementation only supports basic Forth stack-arithmetic, and 
-basic word definition.  
+The Scheme implementation this was written in is Racket. Originally I wanted to
+do a more "traditional" Scheme than Racket, but honestly the Racket guys are 
+awesome and Racket is one of the best languages to date, so I decided to do a
+little conversion.
 
-The Scheme implementation this was written in is Gambit-C. The "version" of 
-Forth I am most closely emulating is the language described in Leo Brodie's 
-"Starting FORTH" (http://www.forth.com/starting-forth). Since I have a 
-(very basic) version of Forth working I intend to use it to go through Brodie's
-books. When I encounter new things or obvious errors in my implementation 
-I will fix them as they go long.
+The "version" of  Forth I am most closely emulating is the language described 
+in Leo Brodie's "Starting FORTH" (http://www.forth.com/starting-forth). 
+Since I have a (very basic) version of Forth working I intend to use it to go
+ through Brodie's books. When I encounter new things or obvious errors in my 
+implementation I will fix them as they go long.
 
 If any advanced Schemers, Lispers, Forthers, Interpreter-writers, Code Ninjas,
 etc. read this program and have any suggestions I'd love to hear them! Send me
 a message through here. Also contact me if you use this, I'd love to hear form
-you. Feel free to fork and improve, hack, whatever.
+you. Feel free to fork and improve, hack, whatever. 
 
 
 LICENSE

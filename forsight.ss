@@ -1,0 +1,281 @@
+#lang racket
+;;; forsight.rkt
+;;; by Justin Hamilton
+;;; June 1st, 2011
+;;; see LICENSE for info
+
+;;; Global variables
+(define *prompt* "forsight> ")
+(define *dictionary* '(("+" add-f) ("-" sub-f) ("*" mul-f) ("/" div-f)
+                       ("." dot-f) (".s" dots-f) ("bye" bye-f)
+                       ("dup" dup-f)))
+
+;;; General procedures
+; breaks the input string into tokens, seperating at spaces
+(define (tokenize str)
+  (define (splitter str i last stop sep)
+    (cond
+      ((eq? i stop)
+        (cons (substring str last stop) '()))
+      ((equal? (string-ref str i) sep)
+        (cons (substring str last i) (splitter str (+ i 1) (+ i 1) stop sep)))
+      (else
+        (splitter str (+ i 1) last stop sep))))
+  (splitter str 0 0 (string-length str) #\space))
+
+;;; Dictionary procedures
+(define (dict-keys dict)
+  (cond
+    ((null? dict)
+      '())
+    (else
+      (cons (first (first dict)) (dict-keys (rest dict))))))
+
+(define (dict-vals dict)
+  (cond
+    ((null? dict)
+      '())
+    (else
+     (cons (rest (first dict)) (dict-vals (rest dict))))))
+
+(define (dict-key? key dict)
+  (member key (dict-keys dict)))
+
+(define (dict-get key dict)
+  (cond
+    ((null? dict)
+      #f)
+    ((equal? key (first (first dict)))
+      (first (rest (first dict))))
+    (else
+      (dict-get key (rest dict)))))       
+
+;;; Stack procedures
+; pushes item onto stack
+(define (push item stack)
+  (cons item stack))
+
+; pushes item1 followed by item2 onto the stack
+(define (push-2 item1 item2 stack)
+  (cons item2 (cons item1 stack)))
+
+(define (pop stack)
+  (rest stack))
+
+(define (pop-2 stack)
+  (rest (rest stack)))
+
+(define (pop-3 stack)
+  (rest (rest (rest stack))))
+
+(define (big-enough? stack num)
+  (>= (length stack) num))     
+
+;;; Lambda procedures for composing abstractions
+(define (mk-binary op)
+  (lambda (stack)
+    (cond
+      ((big-enough? stack 2)
+        (push 
+         (op (second stack) (first stack)) 
+         (pop-2 stack)))
+      (else
+       (push #f stack)))))  
+
+; performs a binary logic operation on the stack, pushing the result
+(define (mk-bilogical op)
+  (lambda (stack)
+    (cond
+     ((big-enough? stack 2)
+      (cond
+        ((op (first stack) (second stack))
+         (push -1 (pop-2 stack)))
+        (else
+         (push 0 (pop-2 stack)))))
+     (else
+      (push #f stack)))))
+
+; performs and/or on the stack, pushing -1 if true, 0 otherwise
+(define (mk-andor op)
+  (lambda (stack)
+    (cond
+     ((< (length stack) 2)
+      (push #f stack))
+     (else
+      (let* ((a (eq? 0 (car stack)))
+	     (b (eq? 0 (second stack)))
+	     (result (eval (cons op (cons a (cons b '()))))))
+	(cond
+	 (result
+	  (cons -1 (pop-2 stack)))
+	 (else
+	  (cons 0 (pop-2 stack)))))))))
+
+;;; Forth procedures
+(define add-f (mk-binary +))
+
+(define sub-f (mk-binary -))
+
+(define mul-f (mk-binary *))
+
+(define div-f (mk-binary quotient))
+
+(define mod-f (mk-binary remainder))
+
+(define (dot-f stack)
+  (cond
+    ((big-enough? stack 1)
+      (display (first stack))
+      (display " ")
+      (pop stack))
+    (else
+      (push #f stack))))
+
+(define (dots-f stack)
+  (display "<")
+  (display (length stack))
+  (display "> ")
+  (display (reverse stack))
+  (display " ")
+  stack)
+
+(define (bye-f stack)
+  (display "goodbye!")
+  (exit))
+
+(define (dup-f stack)
+  (push (first stack) stack))
+
+(define and-f (mk-andor 'and))
+  
+(define or-f (mk-andor 'or))
+  
+(define eq-f (mk-bilogical =))
+  
+; gt-f & lt-f are backwards due to the order of popping
+(define gt-f (mk-bilogical <))
+
+(define lt-f (mk-bilogical >))
+
+(define (swap-f stack)
+  (cons (second stack) (push (first stack) (pop-2 stack))))
+
+(define (over-f stack)
+  (push (second stack) stack))
+  
+(define (drop-f stack)
+  (rest stack))
+   
+(define (eq-zero-f stack)
+  (eq-f (push 0 stack)))
+  
+(define (gt-zero-f stack)
+  (gt-f (push 0 stack)))
+  
+(define (lt-zero-f stack)
+  (lt-f (push 0 stack)))
+
+(define (pass-f stack)
+  stack)
+
+(define (spaces-f stack)
+  (cond
+    ((big-enough? stack 1)
+     (cond
+       ((= (first stack) 0)
+        (rest stack))
+       (else
+        (display " ")
+        (spaces-f (push (- (first stack) 1) (rest stack))))))
+    (else
+     (push #f stack))))
+
+(define (true-f stack)
+  (push -1 stack))
+
+(define (false-f stack)
+  (push 0 stack))
+
+(define (invert-f stack)
+  (cond
+    ((big-enough? stack 1)
+     (cond
+       ((eq? (car stack) 0)
+        (cons -1 (cdr stack)))
+       (else
+        (cons 0 (cdr stack)))))
+    (else
+     (push #f stack))))
+
+(define (rot-f stack)
+  (cond
+   ((< (length stack) 3)
+    (push #f stack))
+   (else
+    (push (second stack)
+	  (push (third stack)
+		(push (first stack) (pop-3 stack)))))))
+
+
+;;; repl procedures
+; repl takes a stack, and continually loops, passing the remaining data
+; stack as input into the program coupled with user input
+(define (repl-f d-stack)
+  (display *prompt*)
+  (let* ((input (read-line))
+         (new-stack (interpret-f (tokenize input) d-stack)))
+    (cond
+      ((or (null? new-stack) (car new-stack))
+       (display "<ok>\n")
+       (repl-f new-stack))
+      (else
+       (display "?\n")
+       (repl-f (cdr new-stack))))))
+
+; compile allows the creation of new words, as well
+; as strings, comparison operators, and use of the return stack
+(define (compile-f input d-stack)
+  (define (compile-iter input keyword col r-stack)    
+    (cond
+      ((null? input)
+       (display "\n... ")
+       (compile-iter (tokenize (read-line)) keyword col r-stack))
+      ((equal? (first input) ";")
+        (set! *dictionary* 
+              (append (push (list keyword col) '()) *dictionary*))
+	(rest input))
+      ((or (symbol? (dict-get (first input) *dictionary*)) (not (dict-get (first input) *dictionary*)))
+       (compile-iter (rest input) keyword (push (first input) col) r-stack))
+      (else
+       (compile-iter (rest input) keyword (append (dict-get (first input) *dictionary*) col) r-stack))))
+  (compile-iter (rest input) (first input) '() '()))
+
+(define (interpret-f input d-stack)
+  (cond
+    ((null? input)
+     d-stack)
+    ((and (not (null? d-stack)) (equal? (first d-stack) #f))
+     d-stack)
+    ((equal? ":" (first input))
+     (interpret-f (compile-f (rest input) d-stack) d-stack))
+    ((number? (first input))
+     (interpret-f (rest input) (push (first input) d-stack)))
+    ((string->number (first input))
+     (interpret-f (rest input) (push (string->number (first input)) d-stack)))
+    (else
+     (let ((fun-f (dict-get (first input) *dictionary*)))  
+       (cond
+	((symbol? fun-f)
+	 (interpret-f (rest input) ((eval fun-f) d-stack)))
+					;((procedure? fun-f)
+         ;  (interpret-f (rest input) (fun-f d-stack)))
+	((eq? fun-f #f)
+	 (push #f d-stack))
+	((list? fun-f)    
+	 (interpret-f (append (reverse fun-f) (rest input)) d-stack))
+	(else
+	 (interpret-f (push fun-f input) d-stack)))))))
+
+;;; main
+(display "FORSIGHT 0.2 (02 June 2011)\n")
+(repl-f '())
