@@ -8,7 +8,8 @@
 (define *prompt* "forsight> ")
 (define *dictionary* '(("+" add-f) ("-" sub-f) ("*" mul-f) ("/" div-f)
                        ("." dot-f) (".s" dots-f) ("bye" bye-f)
-                       ("dup" dup-f)))
+                       ("dup" dup-f) ("rot" rot-f) (".(" print-f) (";" pass-f) 
+		       ("" pass-f) ("and" and-f) ("or" or-f)))
 
 ;;; General procedures
 ; breaks the input string into tokens, seperating at spaces
@@ -22,6 +23,21 @@
       (else
         (splitter str (+ i 1) last stop sep))))
   (splitter str 0 0 (string-length str) #\space))
+
+; returns all the elements of a list 'left' of a seperator
+(define (l-split x sep)
+  (cond
+   ((null? x)
+    '())
+   ((equal? (first x) sep)
+    '())
+   (else
+    (cons (first x) (l-split (rest x) sep)))))
+   
+; returns all the elements of a list 'right' of a seperator
+(define (r-split x sep)
+  (rest (member sep x)))
+
 
 ;;; Dictionary procedures
 (define (dict-keys dict)
@@ -70,6 +86,7 @@
 
 (define (big-enough? stack num)
   (>= (length stack) num))     
+
 
 ;;; Lambda procedures for composing abstractions
 (define (mk-binary op)
@@ -216,6 +233,15 @@
 	  (push (third stack)
 		(push (first stack) (pop-3 stack)))))))
 
+(define (print-f stack)
+  (cond
+    ((equal? (first stack) ")")
+     (rest stack))
+    (else
+     (display (first stack))
+     (display " ")
+     (print-f (rest stack)))))
+
 
 ;;; repl procedures
 ; repl takes a stack, and continually loops, passing the remaining data
@@ -234,6 +260,21 @@
 
 ; compile allows the creation of new words, as well
 ; as strings, comparison operators, and use of the return stack
+(define (string-f input)
+  (define (string-iter input col)
+    (cond
+     ((null? input)
+      (string-iter (tokenize (read-line)) col))
+     ((member "\"" input)
+      (list (append (l-split input "\"") col) (r-split input "\"")))
+     (else
+      (string-iter '() (append input col)))))
+  (string-iter input '()))
+
+; compile handles "compile-mode" (tenuously called, as no real compiling is
+; done). I should clean a lot of this up when I have the chance. Also this
+; currently pushes col in reverse, so I set the appending of string output
+; to conform to this, although I could just as easily change it.
 (define (compile-f input d-stack)
   (define (compile-iter input keyword col r-stack)    
     (cond
@@ -244,6 +285,9 @@
         (set! *dictionary* 
               (append (push (list keyword col) '()) *dictionary*))
 	(rest input))
+      ((equal? (first input) ".\"")
+       (let ((a (string-f (rest input))))
+       (compile-iter (first (rest a)) keyword (append '(")") (reverse (first a)) '(".(") col) r-stack)))
       ((or (symbol? (dict-get (first input) *dictionary*)) (not (dict-get (first input) *dictionary*)))
        (compile-iter (rest input) keyword (push (first input) col) r-stack))
       (else
@@ -258,8 +302,14 @@
      d-stack)
     ((equal? ":" (first input))
      (interpret-f (compile-f (rest input) d-stack) d-stack))
+    ((equal? ".(" (first input))
+     (interpret-f (print-f (rest input)) d-stack))
     ((number? (first input))
      (interpret-f (rest input) (push (first input) d-stack)))
+    ((list? (first input))
+     (display (first input))
+     (eval (first input))
+     (interpret-f (rest input) d-stack))            
     ((string->number (first input))
      (interpret-f (rest input) (push (string->number (first input)) d-stack)))
     (else
@@ -267,15 +317,13 @@
        (cond
 	((symbol? fun-f)
 	 (interpret-f (rest input) ((eval fun-f) d-stack)))
-					;((procedure? fun-f)
-         ;  (interpret-f (rest input) (fun-f d-stack)))
 	((eq? fun-f #f)
 	 (push #f d-stack))
-	((list? fun-f)    
+	((list? fun-f)  
 	 (interpret-f (append (reverse fun-f) (rest input)) d-stack))
 	(else
 	 (interpret-f (push fun-f input) d-stack)))))))
 
 ;;; main
-(display "FORSIGHT 0.2 (02 June 2011)\n")
+(display "FORSIGHT 0.2 (05 June 2011)\n")
 (repl-f '())
