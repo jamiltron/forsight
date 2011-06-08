@@ -2,11 +2,7 @@
   global vars, pass those vars around, and use copies of *dictionary* instead
   of (set! *dictionary* ... )
 
-+ Implement compilation mode (so IFs work)
-
-+ Implement missing functions (ROT, etc.)
-
-+ Make a string function so upper/lower doesn't matter.
++ Get comparisons working in compile-mode
 
 + Implement the whole Block thing (Starting Forth Chap 3)
 
