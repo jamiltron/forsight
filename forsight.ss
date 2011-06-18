@@ -1,7 +1,7 @@
 #lang racket
 ;;; forsight.rkt
 ;;; by Justin Hamilton
-;;; June 1st, 2011
+;;; June 18th, 2011
 ;;; see LICENSE for info
 
 ;;; Global variables
@@ -9,7 +9,13 @@
 (define *dictionary* '(("+" add-f) ("-" sub-f) ("*" mul-f) ("/" div-f)
                        ("." dot-f) (".s" dots-f) ("bye" bye-f)
                        ("dup" dup-f) ("rot" rot-f) (".(" print-f) (";" pass-f) 
-		       ("" pass-f) ("and" and-f) ("or" or-f)))
+		       ("" pass-f) ("and" and-f) ("or" or-f) ("true" true-f)
+		       ("false" false-f) ("drop" drop-f) ("eq" eq-f)
+		       ("<" lt-f) (">" gt-f) ("swap" swap-f) ("over" over-f)))
+
+; the neccessity of this anchor was pointed out to me by offby1 on #racket
+(define-namespace-anchor a)
+(define ns (namespace-anchor->namespace a))
 
 ;;; General procedures
 ; breaks the input string into tokens, seperating at spaces
@@ -308,7 +314,7 @@
      (interpret-f (rest input) (push (first input) d-stack)))
     ((list? (first input))
      (display (first input))
-     (eval (first input))
+     (eval (first input) ns)
      (interpret-f (rest input) d-stack))            
     ((string->number (first input))
      (interpret-f (rest input) (push (string->number (first input)) d-stack)))
@@ -316,7 +322,7 @@
      (let ((fun-f (dict-get (first input) *dictionary*)))  
        (cond
 	((symbol? fun-f)
-	 (interpret-f (rest input) ((eval fun-f) d-stack)))
+	 (interpret-f (rest input) ((eval fun-f ns) d-stack)))
 	((eq? fun-f #f)
 	 (push #f d-stack))
 	((list? fun-f)  
@@ -325,5 +331,5 @@
 	 (interpret-f (push fun-f input) d-stack)))))))
 
 ;;; main
-(display "FORSIGHT 0.2 (05 June 2011)\n")
+(display "FORSIGHT 0.2 (18 June 2011)\n")
 (repl-f '())
