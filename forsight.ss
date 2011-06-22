@@ -1,31 +1,26 @@
 #lang racket
 ;;; forsight.rkt
 ;;; by Justin Hamilton
-;;; June 18th, 2011
+;;; June 21st, 2011
 ;;; see LICENSE for info
 
-;;; Global variables
-(define *prompt* "forsight> ")
-(define *dictionary* '(("+" add-f) ("-" sub-f) ("*" mul-f) ("/" div-f)
-                       ("." dot-f) (".s" dots-f) ("bye" bye-f)
-                       ("dup" dup-f) ("rot" rot-f) (".(" print-f) (";" pass-f) 
-		       ("" pass-f) ("and" and-f) ("or" or-f) ("true" true-f)
-		       ("false" false-f) ("drop" drop-f) ("eq" eq-f)
-		       ("<" lt-f) (">" gt-f) ("swap" swap-f) ("over" over-f)))
-
-; the neccessity of this anchor was pointed out to me by offby1 on #racket
-(define-namespace-anchor a)
-(define ns (namespace-anchor->namespace a))
-
 ;;; General procedures
+; like string to num, but returns the string if its not a number
+(define (string-to-num str)
+  (cond
+   ((string->number str)
+    (string->number str))
+   (else 
+    str)))
+
 ; breaks the input string into tokens, seperating at spaces
 (define (tokenize str)
   (define (splitter str i last stop sep)
     (cond
       ((eq? i stop)
-        (cons (substring str last stop) '()))
+       (cons (string-to-num (substring str last stop)) '()))
       ((equal? (string-ref str i) sep)
-        (cons (substring str last i) (splitter str (+ i 1) (+ i 1) stop sep)))
+       (cons (string-to-num (substring str last i)) (splitter str (+ i 1) (+ i 1) stop sep)))
       (else
         (splitter str (+ i 1) last stop sep))))
   (splitter str 0 0 (string-length str) #\space))
@@ -125,9 +120,9 @@
      ((< (length stack) 2)
       (push #f stack))
      (else
-      (let* ((a (eq? 0 (car stack)))
-	     (b (eq? 0 (second stack)))
-	     (result (eval (cons op (cons a (cons b '()))))))
+      (let* ((a (not (eq? 0 (car stack))))
+	     (b (not (eq? 0 (second stack))))
+	     (result (eval (cons op (cons a (cons b '()))) ns)))
 	(cond
 	 (result
 	  (cons -1 (pop-2 stack)))
@@ -249,6 +244,22 @@
      (print-f (rest stack)))))
 
 
+;;; Global variables
+(define *prompt* "forsight> ")
+(define *dictionary* (list (cons "+" add-f) (cons "-" sub-f) (cons "*" mul-f) 
+			   (cons "/" div-f) (cons "." dot-f) (cons ".s" dots-f) 
+			   (cons "bye" bye-f) (cons "dup" dup-f) (cons "rot" rot-f) 
+			   (cons ".(" print-f) (cons ";" pass-f) (cons "" pass-f) 
+			   (cons "and" and-f) (cons "or" or-f) (cons "true" true-f)
+			   (cons "false" false-f) (cons "drop" drop-f) (cons "eq" eq-f)
+			   (cons "<" lt-f) (cons ">" gt-f) (cons "swap" swap-f) 
+			   (cons "over" over-f)      (cons "rot" rot-f)))
+
+; the neccessity of this anchor was pointed out to me by offby1 on #racket
+(define-namespace-anchor a)
+(define ns (namespace-anchor->namespace a))
+
+
 ;;; repl procedures
 ; repl takes a stack, and continually loops, passing the remaining data
 ; stack as input into the program coupled with user input
@@ -289,15 +300,19 @@
        (compile-iter (tokenize (read-line)) keyword col r-stack))
       ((equal? (first input) ";")
         (set! *dictionary* 
-              (append (push (list keyword col) '()) *dictionary*))
+              (append (push (cons keyword col) *dictionary*)))
 	(rest input))
       ((equal? (first input) ".\"")
        (let ((a (string-f (rest input))))
        (compile-iter (first (rest a)) keyword (append '(")") (reverse (first a)) '(".(") col) r-stack)))
-      ((or (symbol? (dict-get (first input) *dictionary*)) (not (dict-get (first input) *dictionary*)))
-       (compile-iter (rest input) keyword (push (first input) col) r-stack))
+      ((dict-has-key? *dictionary* (first input))
+       (compile-iter (rest input) keyword (cons (dict-ref *dictionary* (first input)) col) r-stack))
       (else
-       (compile-iter (rest input) keyword (append (dict-get (first input) *dictionary*) col) r-stack))))
+       (compile-iter (rest input) keyword (push (first input) col) r-stack))))
+;      ((or (symbol? (dict-ref *dictionary* (first input))) (not (dict-ref *dictionary* (first input))))
+;       (compile-iter (rest input) keyword (push (first input) col) r-stack))
+;      (else
+;       (compile-iter (rest input) keyword (append (dict-ref *dictionary* (first input)) col) r-stack))))
   (compile-iter (rest input) (first input) '() '()))
 
 (define (interpret-f input d-stack)
@@ -312,24 +327,20 @@
      (interpret-f (print-f (rest input)) d-stack))
     ((number? (first input))
      (interpret-f (rest input) (push (first input) d-stack)))
+    ((procedure? (first input))
+     (interpret-f (rest input) ((first input) d-stack)))
     ((list? (first input))
-     (display (first input))
-     (eval (first input) ns)
-     (interpret-f (rest input) d-stack))            
-    ((string->number (first input))
-     (interpret-f (rest input) (push (string->number (first input)) d-stack)))
-    (else
-     (let ((fun-f (dict-get (first input) *dictionary*)))  
+     (interpret-f (append (reverse (first input)) (rest input)) d-stack))
+    ((dict-has-key? *dictionary* (first input))
+     (let ([fun-f (dict-ref *dictionary* (first input))])
        (cond
-	((symbol? fun-f)
-	 (interpret-f (rest input) ((eval fun-f ns) d-stack)))
-	((eq? fun-f #f)
-	 (push #f d-stack))
-	((list? fun-f)  
-	 (interpret-f (append (reverse fun-f) (rest input)) d-stack))
+	((procedure? fun-f)
+	 (interpret-f (rest input) (fun-f d-stack)))
 	(else
-	 (interpret-f (push fun-f input) d-stack)))))))
+	 (interpret-f (append (reverse fun-f) (rest input)) d-stack)))))
+    (else
+     (cons #f (rest input)))))
 
 ;;; main
-(display "FORSIGHT 0.2 (18 June 2011)\n")
+(display "FORSIGHT 0.2 (21 June 2011)\n")
 (repl-f '())
