@@ -1,8 +1,10 @@
 #lang racket
-;;; forsight.rkt
+;;; forsight.ss
 ;;; by Justin Hamilton
-;;; June 21st, 2011
+;;; July 12st, 2011
 ;;; see LICENSE for info
+
+;; MACROS
 
 ;;; General procedures
 ; like string to num, but returns the string if its not a number
@@ -116,18 +118,13 @@
 ; performs and/or on the stack, pushing -1 if true, 0 otherwise
 (define (mk-andor op)
   (lambda (stack)
-    (cond
-     ((< (length stack) 2)
-      (push #f stack))
-     (else
-      (let* ((a (not (eq? 0 (car stack))))
-	     (b (not (eq? 0 (second stack))))
-	     (result (eval (cons op (cons a (cons b '()))) ns)))
-	(cond
-	 (result
-	  (cons -1 (pop-2 stack)))
-	 (else
-	  (cons 0 (pop-2 stack)))))))))
+    (if (not (big-enough? stack 2)) (push #f stack)
+	(let* ((a (not (eq? 0 (first stack))))
+	       (b (not (eq? 0 (second stack))))
+	       (result (if (equal? op 'and) (and a b)
+			   (or a b))))
+	  (if result (push -1 (pop-2 stack))
+	      (push 0 (pop-2 stack)))))))
 
 ;;; Forth procedures
 (define add-f (mk-binary +))
@@ -255,12 +252,8 @@
 			   (cons "<" lt-f) (cons ">" gt-f) (cons "swap" swap-f) 
 			   (cons "over" over-f)      (cons "rot" rot-f)))
 
-; the neccessity of this anchor was pointed out to me by offby1 on #racket
-(define-namespace-anchor a)
-(define ns (namespace-anchor->namespace a))
 
-
-;;; repl procedures
+;;; REPL PROCEDURES
 ; repl takes a stack, and continually loops, passing the remaining data
 ; stack as input into the program coupled with user input
 (define (repl-f d-stack)
@@ -342,5 +335,5 @@
      (cons #f (rest input)))))
 
 ;;; main
-(display "FORSIGHT 0.2 (21 June 2011)\n")
+(display "FORSIGHT 0.2 (12 July 2011)\n")
 (repl-f '())
